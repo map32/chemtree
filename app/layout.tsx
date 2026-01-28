@@ -3,6 +3,7 @@ import { Sidebar } from '@/components/layout/Sidebar'
 import { Header } from '@/components/layout/Header'
 import { Orbitron, Inter } from 'next/font/google'
 import './globals.css'
+import { Suspense } from 'react'
 
 const orbitron = Orbitron({ subsets: ['latin'], variable: '--font-orbitron' })
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
@@ -26,7 +27,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           
           {/* Left Column: Sidebar Navigation */}
           <aside className="md:w-64 flex-shrink-0 mb-8 md:mb-0">
-             <Sidebar />
+            <Suspense fallback={<div className="w-64 bg-navy-900 h-screen" />}>
+              <Sidebar />
+            </Suspense>
           </aside>
 
           {/* Right Column: Main Content */}
