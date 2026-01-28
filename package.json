@@ -9,9 +9,18 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.8.0",
+    "@supabase/supabase-js": "^2.93.2",
+    "@tiptap/extension-image": "^3.17.1",
+    "@tiptap/html": "^3.17.1",
+    "@tiptap/react": "^3.17.1",
+    "@tiptap/starter-kit": "^3.17.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.563.0",
     "next": "16.1.6",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "use-debounce": "^10.1.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
