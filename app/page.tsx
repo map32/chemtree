@@ -5,7 +5,14 @@ import { PostSkeleton } from '@/components/ui/Skeleton'
 import { DeleteButton } from '@/components/blog/DeleteButton'
 
 // 1. The Async List Component (Handles Fetching)
-async function PostList({ category }: { category?: string }) {
+async function PostList({ 
+  searchParams 
+}: { 
+  searchParams: Promise<{ category?: string }> 
+}) {
+  // Await params here, not in the parent
+  const { category } = await searchParams
+  
   const supabase = await createClient()
   // 1. Check if Admin is logged in
   const { data: { user } } = await supabase.auth.getUser()
@@ -76,26 +83,44 @@ async function PostList({ category }: { category?: string }) {
   )
 }
 
-// === THE FIXED MAIN COMPONENT ===
-export default async function HomePage({ 
+// === HEADER COMPONENT (Handles Category Display) ===
+async function PageHeader({ 
   searchParams 
 }: { 
-  // 1. Update the type to be a Promise
   searchParams: Promise<{ category?: string }> 
 }) {
-  // 2. Await the params before using them
   const { category } = await searchParams
+  
+  return (
+    <div className="border-b border-navy-800 pb-4 mb-6">
+      <h2 className="text-3xl font-orbitron text-white">
+        {category ? `${category} Archive` : 'Recent Entries'}
+      </h2>
+    </div>
+  )
+}
+
+// === THE FIXED MAIN COMPONENT ===
+export default function HomePage({ 
+  searchParams 
+}: { 
+  searchParams: Promise<{ category?: string }> 
+}) {
+  // Don't await here - pass the Promise down to PostList
+  // This lets the page render immediately and show the Suspense fallback
 
   return (
     <div className="space-y-8">
-      <div className="border-b border-navy-800 pb-4 mb-6">
-         <h2 className="text-3xl font-orbitron text-white">
-           {category ? `${category} Archive` : 'Recent Entries'}
-         </h2>
-      </div>
+      <Suspense fallback={
+        <div className="border-b border-navy-800 pb-4 mb-6">
+          <h2 className="text-3xl font-orbitron text-white">Loading...</h2>
+        </div>
+      }>
+        <PageHeader searchParams={searchParams} />
+      </Suspense>
 
       <Suspense 
-        key={category || 'home'} 
+        key="posts" 
         fallback={
           <div className="grid gap-6">
             <PostSkeleton />
@@ -104,8 +129,8 @@ export default async function HomePage({
           </div>
         }
       >
-        {/* PostList component is still async, so it works perfectly inside Suspense */}
-        <PostList category={category} />
+        {/* PostList now awaits searchParams internally */}
+        <PostList searchParams={searchParams} />
       </Suspense>
     </div>
   )
