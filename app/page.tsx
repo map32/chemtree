@@ -100,14 +100,15 @@ async function PageHeader({
   )
 }
 
-// === THE FIXED MAIN COMPONENT ===
-export default function HomePage({ 
+// 1. Make the Page component async so we can await params for the key
+export default async function HomePage({ 
   searchParams 
 }: { 
   searchParams: Promise<{ category?: string }> 
 }) {
-  // Don't await here - pass the Promise down to PostList
-  // This lets the page render immediately and show the Suspense fallback
+  // 2. Await the params immediately. 
+  // This is instantaneous (just URL parsing) and won't block the page load.
+  const { category } = await searchParams
 
   return (
     <div className="space-y-8">
@@ -119,8 +120,12 @@ export default function HomePage({
         <PageHeader searchParams={searchParams} />
       </Suspense>
 
+      {/* 3. ADD THE KEY PROP HERE.
+        When 'category' changes, React destroys the old component 
+        and immediately renders the fallback.
+      */}
       <Suspense 
-        key="posts" 
+        key={category || 'home'} 
         fallback={
           <div className="grid gap-6">
             <PostSkeleton />
@@ -129,7 +134,6 @@ export default function HomePage({
           </div>
         }
       >
-        {/* PostList now awaits searchParams internally */}
         <PostList searchParams={searchParams} />
       </Suspense>
     </div>
