@@ -3,6 +3,7 @@ import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import TipTapImage from '@tiptap/extension-image'
 import { uploadImage } from '@/app/actions' // Importing the server action
+import OfficePaste from "@intevation/tiptap-extension-office-paste";
 
 interface EditorProps {
   content: any
@@ -14,6 +15,7 @@ export default function TipTap({ content, onChange }: EditorProps) {
     immediatelyRender: false,
     extensions: [
       StarterKit,
+      OfficePaste,
       // FORCE the schema to recognize 'src'
       TipTapImage.configure({
         inline: true,

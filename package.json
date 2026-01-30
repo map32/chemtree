@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@intevation/tiptap-extension-office-paste": "^0.1.2",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.93.2",
     "@tiptap/extension-image": "^3.17.1",

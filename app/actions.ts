@@ -93,7 +93,57 @@ export async function deletePost(postId: string) {
   }
 
   // 3. Clear Cache so the UI updates immediately
+  revalidatePath('/admin/categories')
   revalidatePath('/') // Updates the homepage list
   
+  return { success: true }
+}
+
+export async function getCategories() {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+
+    .from('categories')
+    .select('id, name')
+  if (error) throw new Error(error.message)
+  return data ?? []
+}
+
+export async function addCategory(name: string) {
+  const supabase = await createClient()
+  // Request the inserted row back with .select().single()
+  const { data, error } = await supabase
+    .from('categories')
+    .insert({ name })
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Add Category Error:', error)
+    return { success: false, error: error.message }
+  }
+
+  // Revalidate pages that depend on categories so they update immediately
+  revalidatePath('/admin/categories')
+  revalidatePath('/')
+
+  return { success: true, category: data }
+}
+
+export async function deleteCategory(categoryId: string) {
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('categories')
+    .delete()
+    .eq('id', categoryId)
+  if (error) {
+    console.error('Delete Category Error:', error)
+    return { success: false, error: error.message }
+  }
+
+  // Revalidate pages that depend on categories so they update immediately
+  revalidatePath('/admin/categories')
+  revalidatePath('/')
+
   return { success: true }
 }

@@ -1,17 +1,18 @@
 'use client'
-import { useState } from 'react'
+import { useContext, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { FlaskConical, Lock, Mail } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { UserContext } from '@/context/UserContext'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  
+  const {setUser} = useContext(UserContext);
   const router = useRouter()
   const supabase = createClient()
 
@@ -20,7 +21,7 @@ export default function LoginPage() {
     setLoading(true)
     setErrorMsg(null)
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error, data } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
@@ -30,6 +31,7 @@ export default function LoginPage() {
       setLoading(false)
     } else {
       // Login successful!
+      setUser(data.user);
       router.refresh() // Refreshes Server Components (like Middleware)
       router.push('/admin/write')
     }

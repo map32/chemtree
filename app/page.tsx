@@ -1,4 +1,4 @@
-import { Suspense } from 'react'
+import { Suspense, use } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { PostSkeleton } from '@/components/ui/Skeleton'
@@ -84,12 +84,12 @@ async function PostList({
 }
 
 // === HEADER COMPONENT (Handles Category Display) ===
-async function PageHeader({ 
+function PageHeader({ 
   searchParams 
 }: { 
   searchParams: Promise<{ category?: string }> 
 }) {
-  const { category } = await searchParams
+  const { category } = use(searchParams)
   
   return (
     <div className="border-b border-navy-800 pb-4 mb-6">

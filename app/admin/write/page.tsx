@@ -2,13 +2,37 @@
 import { useEffect, useState } from 'react'
 import { createPost } from '@/app/actions'
 import TipTap from '@/components/editor/TipTap'
-import { CATEGORIES } from '@/config/categories'
 import { useRouter } from 'next/navigation' // <--- Add this
+import { getCategories } from '@/app/actions'
 
-export default function WritePage() {
+type Category = { id: string; name: string }
+
+export default function WriteForm() {
   const [contentJson, setContentJson] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [loadingCats, setLoadingCats] = useState(true)
+  const [categories, setCategories] = useState<Category[]>([])
   const router = useRouter()
+
+  useEffect(() => {
+    let mounted = true
+    setLoadingCats(true)
+    getCategories()
+      .then((data) => {
+        if (!mounted) return
+        setCategories(data ?? [])
+      })
+      .catch((err) => {
+        console.error('Failed to load categories', err)
+      })
+      .finally(() => {
+        if (mounted) setLoadingCats(false)
+      })
+
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   const handleSubmit = async (formData: FormData) => {
     setIsSubmitting(true)
@@ -54,12 +78,20 @@ export default function WritePage() {
               <select 
                 name="category" 
                 className="w-full bg-navy-900 border border-navy-800 p-3 rounded text-white appearance-none focus:border-chem-yellow focus:outline-none cursor-pointer"
+                defaultValue={""}
+                required
               >
-                {CATEGORIES.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.label}
-                  </option>
-                ))}
+                {loadingCats ? (
+                  <option value="">Loading...</option>
+                ) : categories.length ? (
+                  categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))
+                ) : (
+                  <option value="">No categories</option>
+                )}
               </select>
               <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                 ▼
