@@ -1,6 +1,7 @@
 import { Search } from 'lucide-react';
 import Image from 'next/image';
 import { SearchBar } from '../blog/SearchBar';
+import { Suspense } from 'react';
 
 export function Header() {
   return (
@@ -22,7 +23,9 @@ export function Header() {
           </p>
         </div>
         <div className="flex-1">
-            <SearchBar />
+            <Suspense fallback={<div className="w-full h-10 bg-navy-800 rounded-lg animate-pulse" />}>
+                <SearchBar />
+            </Suspense>
         </div>
       </div>
     </header>

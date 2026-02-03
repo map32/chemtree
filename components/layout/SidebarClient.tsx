@@ -54,12 +54,12 @@ export default function SidebarClient({ categories }: { categories: Category[] }
 
           {/* 2. DYNAMIC CATEGORIES (From DB) */}
           {categories.map((cat) => {
-            const isActive = currentCategory === cat.name
+            const isActive = decodeURIComponent(currentCategory || '') === cat.name
 
             return (
               <li key={cat.id}>
                 <Link
-                  href={`/?category=${cat.name}`}
+                  href={`/?category=${encodeURIComponent(cat.name)}`}
                   className={`flex items-center gap-3 px-3 py-3 rounded-md transition-all ${
                     isActive 
                       ? 'bg-chem-yellow text-navy-950 font-bold shadow-[0_0_10px_rgba(251,191,36,0.2)]' 
