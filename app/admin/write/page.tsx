@@ -85,7 +85,7 @@ export default function WriteForm() {
                   <option value="">Loading...</option>
                 ) : categories.length ? (
                   categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
+                    <option key={cat.id} value={cat.name}>
                       {cat.name}
                     </option>
                   ))

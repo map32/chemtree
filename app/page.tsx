@@ -8,10 +8,10 @@ import { DeleteButton } from '@/components/blog/DeleteButton'
 async function PostList({ 
   searchParams 
 }: { 
-  searchParams: Promise<{ category?: string }> 
+  searchParams: Promise<{ category?: string, q?: string }> 
 }) {
   // Await params here, not in the parent
-  const { category } = await searchParams
+  const { category, q } = await searchParams
   
   const supabase = await createClient()
   // 1. Check if Admin is logged in
@@ -29,12 +29,20 @@ async function PostList({
     query = query.eq('category', category)
   }
 
+  // Apply Filter if search query exists
+  if (q) {
+    query = supabase.from('posts').select().textSearch('fts', '' + q, {
+      type: 'plain',
+      config: 'english',
+    })
+  }
+
   const { data: posts } = await query
 
   if (!posts || posts.length === 0) {
     return (
       <div className="text-slate-500 italic p-8 text-center bg-navy-900 rounded-lg border border-navy-800">
-        No entries found {category ? `for ${category}` : ''}.
+        No entries found {category ? `for ${category}` : ''} {q ? `for search term "${q}"` : ''}.
       </div>
     )
   }
@@ -87,14 +95,14 @@ async function PostList({
 function PageHeader({ 
   searchParams 
 }: { 
-  searchParams: Promise<{ category?: string }> 
+  searchParams: Promise<{ category?: string, q?: string }> 
 }) {
-  const { category } = use(searchParams)
+  const { category, q } = use(searchParams)
   
   return (
     <div className="border-b border-navy-800 pb-4 mb-6">
       <h2 className="text-3xl font-orbitron text-white">
-        {category ? `${category} Archive` : 'Recent Entries'}
+        {q ? `Search Results for "${q}"` : category ? `${category} Archive` : 'Recent Entries'}
       </h2>
     </div>
   )
@@ -104,7 +112,7 @@ function PageHeader({
 export default async function HomePage({ 
   searchParams 
 }: { 
-  searchParams: Promise<{ category?: string }> 
+  searchParams: Promise<{ category?: string, q?: string }> 
 }) {
   // 2. Await the params immediately. 
   // This is instantaneous (just URL parsing) and won't block the page load.

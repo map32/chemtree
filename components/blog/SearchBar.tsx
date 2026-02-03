@@ -14,11 +14,11 @@ export function SearchBar() {
     } else {
       params.delete('q')
     }
-    replace(`/blog?${params.toString()}`)
+    replace(`/?${params.toString()}`)
   }, 300)
 
   return (
-    <div className="relative max-w-md w-full">
+    <div className="relative max-w-md w-full float-right">
       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
       <input
         className="w-full bg-navy-900 border border-navy-800 rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-chem-yellow focus:ring-1 focus:ring-chem-yellow placeholder:text-slate-600"
