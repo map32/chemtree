@@ -41,7 +41,7 @@ export default function AboutPage() {
             <Link href="mailto:student@example.com" className="p-2 bg-navy-900 rounded-lg hover:bg-chem-yellow hover:text-navy-950 transition-colors border border-navy-800">
               <Mail className="w-5 h-5" />
             </Link>
-          </div>*}
+          </div>*/}
         </div>
 
         {/* Right: The Content */}
