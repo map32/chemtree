@@ -12,7 +12,7 @@ export default function AboutPage() {
           About the <span className="text-chem-yellow">Chemist</span>
         </h1>
         <p className="text-slate-400 font-mono text-sm">
-          // Subject: [Your Name] // Status: Active
+          Nahyeon Cho
         </p>
       </div>
 
@@ -31,7 +31,7 @@ export default function AboutPage() {
           </div>
           
           {/* Social Links */}
-          <div className="flex justify-center gap-4">
+          {/*<div className="flex justify-center gap-4">
             <Link href="#" className="p-2 bg-navy-900 rounded-lg hover:bg-chem-yellow hover:text-navy-950 transition-colors border border-navy-800">
               <Github className="w-5 h-5" />
             </Link>
@@ -41,40 +41,45 @@ export default function AboutPage() {
             <Link href="mailto:student@example.com" className="p-2 bg-navy-900 rounded-lg hover:bg-chem-yellow hover:text-navy-950 transition-colors border border-navy-800">
               <Mail className="w-5 h-5" />
             </Link>
-          </div>
+          </div>*}
         </div>
 
         {/* Right: The Content */}
         <div className="md:col-span-2 space-y-6 text-slate-300 leading-relaxed">
           <div className="prose prose-invert max-w-none">
-            <h3 className="text-xl font-orbitron text-white mb-4">Hypothesis & Objective</h3>
+            <h3 className="text-xl font-orbitron text-white mb-4">About Me</h3>
             <p>
-              Welcome to <strong>Chemtree</strong>. I am a high school student with a deep fascination for the molecular world. 
-              This blog serves as my digital laboratory notebook—a place where I document my experiments, 
-              break down complex chemical concepts, and track my daily learning in AP Chemistry and beyond.
-            </p>
-            <p>
-              My goal isn't just to memorize the periodic table, but to understand the <em>why</em> and <em>how</em> 
-              behind the reactions that shape our universe.
-            </p>
+              My name is Hannah, and I created <em>Chemtree</em> to better understand chemistry beyond memorizing formulas.</p>
+              
+              <p>When I first started learning chemistry, I could follow individual lessons, but the bigger picture often felt unclear. I wanted to understand how concepts were connected and why reactions worked the way they did. Chemtree began as a way to organize what I was learning and turn questions into clear explanations.</p>
+
+<p>Through researching topics like everyday chemical reactions and new scientific developments, I’ve learned to think more deeply about how chemistry shapes the world around us. Writing each post helps me strengthen my understanding while making complex ideas more accessible.</p>
+
+<p>I built this website on my own and learned a lot through trial and error. Fixing mistakes and reworking pages forced me to be patient and think through problems instead of rushing past them.</p>
+
+<p><em>Chemtree</em> is still growing as I grow. It shows how I learn, how I question things, and how I try to understand science in a deeper and more connected way.</p>
+
           </div>
 
           {/* Current Focus Section */}
           <div className="bg-navy-900/50 p-6 rounded-lg border border-navy-800 border-l-4 border-l-chem-green">
             <h4 className="text-chem-green font-bold font-orbitron mb-2 text-sm uppercase">
-              Current Research Focus
+              What I Focus On
             </h4>
+            <p>Through <em>Chemtree</em>, I explore several areas of chemistry:</p>
             <ul className="list-disc list-inside space-y-1 text-sm text-slate-300">
-              <li>Stoichiometry and limiting reactants in home experiments</li>
-              <li>Understanding Organic Chemistry mechanisms</li>
-              <li>Analyzing the environmental impact of industrial polymers</li>
+              <li>Breaking down core concepts from my coursework</li>
+              <li>Explaining chemistry behind everyday phenomena</li>
+              <li>Researching new scientific developments and innovations</li>
+              <li>Documenting experiments and hands-on learning</li>
+              <li>Connecting molecular processes to real-world applications</li>
             </ul>
           </div>
         </div>
       </div>
 
       {/* 3. The "Meta" Section (Built with...) */}
-      <div className="pt-8 border-t border-navy-800">
+      {/*<div className="pt-8 border-t border-navy-800">
         <h3 className="text-lg font-orbitron text-white mb-6 flex items-center gap-2">
           <Code2 className="w-5 h-5 text-chem-yellow" />
           Lab Equipment (Tech Stack)
@@ -93,7 +98,7 @@ export default function AboutPage() {
             </div>
           ))}
         </div>
-      </div>
+      </div>*/}
 
     </div>
   )

@@ -19,7 +19,7 @@ export function Header() {
             CHEMTREE
           </h1>
           <p className="text-chem-yellow font-mono mt-2 text-lg">
-            // Growing knowledge, one bond at a time.
+            Understanding chemistry, one concept at a time.
           </p>
         </div>
         <div className="flex-1">
