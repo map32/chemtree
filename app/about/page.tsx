@@ -12,7 +12,7 @@ export default function AboutPage() {
           About the <span className="text-chem-yellow">Chemist</span>
         </h1>
         <p className="text-slate-400 font-mono text-sm">
-          Nahyeon Cho
+          Hannah Cho
         </p>
       </div>
 
@@ -49,14 +49,14 @@ export default function AboutPage() {
           <div className="prose prose-invert max-w-none">
             <h3 className="text-xl font-orbitron text-white mb-4">About Me</h3>
             <p>
-              My name is Hannah, and I created <em>Chemtree</em> to better understand chemistry beyond memorizing formulas.</p>
+              My name is Hannah, and I created <em>Chemtree</em> to better understand chemistry beyond memorizing formulas.</p><br/>
               
               <p>When I first started learning chemistry, I could follow individual lessons, but the bigger picture often felt unclear. I wanted to understand how concepts were connected and why reactions worked the way they did. Chemtree began as a way to organize what I was learning and turn questions into clear explanations.</p>
-
+<br/>
 <p>Through researching topics like everyday chemical reactions and new scientific developments, I’ve learned to think more deeply about how chemistry shapes the world around us. Writing each post helps me strengthen my understanding while making complex ideas more accessible.</p>
-
+<br/>
 <p>I built this website on my own and learned a lot through trial and error. Fixing mistakes and reworking pages forced me to be patient and think through problems instead of rushing past them.</p>
-
+<br/>
 <p><em>Chemtree</em> is still growing as I grow. It shows how I learn, how I question things, and how I try to understand science in a deeper and more connected way.</p>
 
           </div>
