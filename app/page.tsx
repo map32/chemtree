@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { PostSkeleton } from '@/components/ui/Skeleton'
 import { DeleteButton } from '@/components/blog/DeleteButton'
+import { EditButton } from '@/components/blog/EditButton'
 
 // 1. The Async List Component (Handles Fetching)
 async function PostList({ 
@@ -55,7 +56,8 @@ async function PostList({
           className="bg-navy-900 border border-navy-800 p-6 rounded-lg hover:border-chem-yellow transition-colors group relative"
         >
           {isAdmin && (
-            <div className="absolute top-4 right-4 z-20">
+            <div className="absolute top-4 right-4 z-20 flex gap-2">
+                <EditButton postId={post.id} />
                <DeleteButton postId={post.id} />
             </div>
           )}

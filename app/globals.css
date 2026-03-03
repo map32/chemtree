@@ -1,9 +1,11 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 :root {
   --font-orbitron: "Orbitron", sans-serif;
   --font-inter: "Inter", sans-serif;
 }
+
 
 @theme {
   --color-navy-950: #020617; /* Very Dark Blue (Background) */
@@ -15,6 +17,11 @@
   
   --font-orbitron: var(--font-orbitron);
   --font-inter: var(--font-inter);
+}
+
+@utility prose-fix {
+  --tw-prose-bold: 'inherit';
+  --tw-prose-invert-bold: 'inherit';
 }
 
 /* Force dark styling globally */

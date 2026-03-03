@@ -1,17 +1,23 @@
 'use client'
-import { useEffect, useState } from 'react'
-import { createPost } from '@/app/actions'
+import { useEffect, useRef, useState } from 'react'
+import { createPost, editPost } from '@/app/actions'
 import TipTap from '@/components/editor/TipTap'
-import { useRouter } from 'next/navigation' // <--- Add this
+import { useRouter, useSearchParams } from 'next/navigation' // <--- Add this
 import { getCategories } from '@/app/actions'
+import { createClient } from '@/lib/supabase/client'
 
 type Category = { id: string; name: string }
 
 export default function WriteForm() {
+  const params = useSearchParams() // <--- Get the post ID from the query parameters (e.g., /admin/write?id=123)
+  const id = params.get('id') // <--- This will be null if we're creating a new post, or the post ID if we're editing
+  const [editMode, setEditMode] = useState(false) // Not currently used, but can be helpful for future edits
   const [contentJson, setContentJson] = useState({})
+  const [otherData, setOtherData] = useState({ title: '', category: '' }) // For non-editor fields
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [loadingCats, setLoadingCats] = useState(true)
   const [categories, setCategories] = useState<Category[]>([])
+  const editorRef = useRef<any>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -28,11 +34,34 @@ export default function WriteForm() {
       .finally(() => {
         if (mounted) setLoadingCats(false)
       })
-
+    const loadEditPost = async () => {
+      if (!id) return
+      try {
+        const supabase = await createClient()
+        const { data: post, error } = await supabase
+          .from('posts')
+          .select('*')
+          .eq('id', id)
+          .single()
+        if (error || !post) {
+          console.error('Failed to load post for editing', error)
+          return
+        }
+        console.log(post)
+        setContentJson(post.content) // Assuming content is stored as JSON
+        editorRef.current?.setContent(post.content) // Set content in TipTap editor
+        setOtherData({ title: post.title, category: post.category })
+        setEditMode(true)
+      } catch (err) {
+        console.error('Error loading post for editing', err)
+      }
+    }
+    loadEditPost();
     return () => {
       mounted = false
     }
   }, [])
+
 
   const handleSubmit = async (formData: FormData) => {
     setIsSubmitting(true)
@@ -42,15 +71,26 @@ export default function WriteForm() {
       setIsSubmitting(false)
       return
     }
-    formData.append('content', JSON.stringify(contentJson))
-    // No try/catch needed here anymore, as we handle the error object
-    const result = await createPost(formData)
-    
-    if (result.success) {
-      router.push(`/${result.slug}`) // <--- Client-side redirect (Safe)
+    if (editMode) {
+      formData.append('content', JSON.stringify(contentJson))
+      const result = await editPost(id as string, formData) // <--- Call editPost instead of createPost
+      if (result.success) {
+        router.push(`/${result.slug}`) // <--- Client-side redirect (Safe)
+      } else {
+        alert(`Error: ${result.error}`)
+        setIsSubmitting(false)
+      }
     } else {
-      alert(`Error: ${result.error}`)
-      setIsSubmitting(false)
+      formData.append('content', JSON.stringify(contentJson))
+      // No try/catch needed here anymore, as we handle the error object
+      const result = await createPost(formData)
+      
+      if (result.success) {
+        router.push(`/${result.slug}`) // <--- Client-side redirect (Safe)
+      } else {
+        alert(`Error: ${result.error}`)
+        setIsSubmitting(false)
+      }
     }
   }
 
@@ -68,6 +108,7 @@ export default function WriteForm() {
               name="title"
               required
               className="w-full bg-navy-900 border border-navy-800 p-3 rounded text-white focus:border-chem-yellow focus:outline-none focus:ring-1 focus:ring-chem-yellow"
+              defaultValue={editMode ? otherData.title : undefined}
               placeholder="e.g. The Iodine Clock Reaction"
             />
           </div>
@@ -78,7 +119,7 @@ export default function WriteForm() {
               <select 
                 name="category" 
                 className="w-full bg-navy-900 border border-navy-800 p-3 rounded text-white appearance-none focus:border-chem-yellow focus:outline-none cursor-pointer"
-                defaultValue={""}
+                defaultValue={editMode ? otherData.category : ""}
                 required
               >
                 {loadingCats ? (
@@ -103,7 +144,7 @@ export default function WriteForm() {
         {/* Editor Area */}
         <div className="space-y-2">
            <label className="block text-slate-400">Lab Protocol (Content)</label>
-           <TipTap content={contentJson} onChange={setContentJson} />
+           <TipTap content={contentJson} onChange={setContentJson} ref={editorRef}/>
         </div>
 
         <button 

@@ -3,6 +3,10 @@ import { generateHTML } from '@tiptap/html'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
 import { DeleteButton } from '@/components/blog/DeleteButton'
+import { EditButton } from '@/components/blog/EditButton'
+import { TextStyleKit } from '@tiptap/extension-text-style'
+import Highlight from '@tiptap/extension-highlight'
+import OfficePaste from '@intevation/tiptap-extension-office-paste'
 
 export default async function BlogPost({ params }: { params: Promise<any> }) {
   const supabase = await createClient()
@@ -21,6 +25,9 @@ export default async function BlogPost({ params }: { params: Promise<any> }) {
   // Convert JSON to HTML on the server
   const htmlContent = generateHTML(post.content, [
     StarterKit,
+    TextStyleKit,
+    Highlight.configure({ multicolor: true }),
+    OfficePaste,
     Image
   ])
 
@@ -30,7 +37,10 @@ export default async function BlogPost({ params }: { params: Promise<any> }) {
         <span className="text-chem-yellow font-orbitron text-sm uppercase tracking-wider">
           {post.category}
           {isAdmin && (
-             <DeleteButton postId={post.id} redirectAfter={true} />
+               <>
+                <EditButton postId={post.id} />
+                <DeleteButton postId={post.id} redirectAfter={true} />
+                </>
            )}
         </span>
         <h1 className="text-4xl md:text-5xl font-bold text-white mt-2 mb-4 font-orbitron">
@@ -43,7 +53,7 @@ export default async function BlogPost({ params }: { params: Promise<any> }) {
 
       {/* Render HTML content */}
       <div 
-        className="prose prose-invert prose-lg prose-headings:font-orbitron prose-a:text-chem-yellow max-w-none"
+        className="prose prose-fix prose-invert prose-base prose-headings:font-orbitron prose-a:text-chem-yellow max-w-none"
         dangerouslySetInnerHTML={{ __html: htmlContent }} 
       />
     </article>

@@ -74,6 +74,35 @@ export async function uploadImage(formData: FormData) {
   return data.publicUrl
 }
 
+export async function editPost(postId: string, formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+  const contentJson = JSON.parse(formData.get('content') as string)
+  const title = formData.get('title') as string
+  const category = formData.get('category') as string
+  const rawText = generateExcerpt(contentJson)
+  const excerpt = rawText.slice(0, 160).trim() + (rawText.length > 160 ? '...' : '') || 'View details...'
+  const slug = title.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-')
+
+  const { error } = await supabase
+    .from('posts')
+    .update({
+      title,
+      slug,
+      excerpt,
+      category,
+      content: contentJson,
+    })
+    .eq('id', postId)
+  if (error) {
+    console.error('Edit Post Error:', error)
+    return { success: false, error: error.message }
+  }
+  revalidatePath(`/posts/${slug}`)
+  return { success: true, slug: slug}
+}
+
 export async function deletePost(postId: string) {
   const supabase = await createClient()
   
