@@ -103,6 +103,10 @@ export default function SidebarClient({ categories }: { categories: Category[] }
                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                Edit Categories
              </Link>
+             <Link href="/admin/profile" className="flex items-center gap-2 text-xs text-chem-yellow hover:text-white transition-colors">
+               <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+               Edit Profile
+             </Link>
              <button 
                 onClick={handleLogout}
                 className="flex items-center gap-2 text-xs text-red-400 hover:text-red-300 transition-colors w-full text-left"

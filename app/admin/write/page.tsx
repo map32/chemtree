@@ -47,7 +47,6 @@ export default function WriteForm() {
           console.error('Failed to load post for editing', error)
           return
         }
-        console.log(post)
         setContentJson(post.content) // Assuming content is stored as JSON
         editorRef.current?.setContent(post.content) // Set content in TipTap editor
         setOtherData({ title: post.title, category: post.category })

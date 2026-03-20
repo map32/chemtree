@@ -1,6 +1,7 @@
 'use server'
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 
 // HELPER: Recursively extract text from TipTap JSON
 function generateExcerpt(node: any): string {
@@ -110,20 +111,73 @@ export async function deletePost(postId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
 
-  // 2. Delete the post
-  const { error } = await supabase
+  // 2. Fetch the post to get the JSON content BEFORE deleting it
+  const { data: post, error: fetchError } = await supabase
+    .from('posts')
+    .select('content')
+    .eq('id', postId)
+    .single()
+
+  if (fetchError) {
+    console.error('Fetch Error:', fetchError)
+    return { success: false, error: fetchError.message }
+  }
+
+  // 3. Extract image URLs from the JSON tree
+  const imageUrls: string[] = []
+  
+  // Recursive helper function to find all image nodes
+  function extractImageUrls(node: any) {
+    if (node.type === 'image' && node.attrs?.src) {
+      imageUrls.push(node.attrs.src)
+    }
+    if (Array.isArray(node.content)) {
+      node.content.forEach(extractImageUrls)
+    }
+  }
+
+  if (post?.content) {
+    extractImageUrls(post.content)
+  }
+
+  // 4. Parse the file paths and delete from Supabase Storage
+  // Change 'blog-assets' if your bucket name is different
+  const BUCKET_NAME = 'blog-assets' 
+  
+  // Extract just the path (e.g., "uploads/123.jpeg") from the full URL
+  const pathsToDelete = imageUrls
+    .map(url => {
+      const parts = url.split(`/public/${BUCKET_NAME}/`)
+      return parts.length > 1 ? parts[1] : null
+    })
+    .filter(Boolean) as string[]
+
+  if (pathsToDelete.length > 0) {
+    const { error: storageError } = await supabase
+      .storage
+      .from(BUCKET_NAME)
+      .remove(pathsToDelete)
+
+    if (storageError) {
+      // We log the error but don't return yet; we still want to delete the post itself
+      console.error('Storage Delete Error:', storageError) 
+    }
+  }
+
+  // 5. Delete the post
+  const { error: deleteError } = await supabase
     .from('posts')
     .delete()
     .eq('id', postId)
 
-  if (error) {
-    console.error('Delete Error:', error)
-    return { success: false, error: error.message }
+  if (deleteError) {
+    console.error('Delete Error:', deleteError)
+    return { success: false, error: deleteError.message }
   }
 
-  // 3. Clear Cache so the UI updates immediately
+  // 6. Clear Cache so the UI updates immediately
   revalidatePath('/admin/categories')
-  revalidatePath('/') // Updates the homepage list
+  revalidatePath('/') 
   
   return { success: true }
 }
@@ -175,4 +229,84 @@ export async function deleteCategory(categoryId: string) {
   revalidatePath('/')
 
   return { success: true }
+}
+
+
+// 2. IMAGE UPLOAD (For TipTap)
+export async function uploadProfile(formData: FormData) {
+  const supabase = await createClient()
+  const file = formData.get('file') as File
+  const fileExt = file.name.split('.').pop()
+  const fileName = `profile.${fileExt}`
+
+  const { error } = await supabase.storage
+    .from('blog-assets')
+    .upload(fileName, file, {
+      contentType: file.type,
+      upsert: true, // This will overwrite the existing profile picture
+    })
+
+  if (error) throw new Error(error.message)
+
+  const { data } = supabase.storage
+    .from('blog-assets')
+    .getPublicUrl(fileName)
+
+  return data.publicUrl
+}
+
+export async function updateProfile(formData: FormData) {
+  const supabase = await createClient()
+  
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const name = formData.get('name') as string
+  const introText = formData.get('introText') as string
+  const avatarFile = formData.get('avatar') as File | null
+  let avatarUrl = formData.get('currentAvatarUrl') as string
+
+  // 1. Handle Image Upload if a new file was selected
+  if (avatarFile && avatarFile.size > 0) {
+    const fileExt = avatarFile.name.split('.').pop()
+    const fileName = `avatars/${user.id}-${Math.random()}.${fileExt}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('blog-assets')
+      .upload(fileName, avatarFile, { upsert: true })
+
+    if (uploadError) throw new Error('Failed to upload image')
+
+    const { data: publicUrlData } = supabase.storage
+      .from('blog-assets')
+      .getPublicUrl(fileName)
+
+    avatarUrl = publicUrlData.publicUrl
+  }
+
+  const { error: dbError } = await supabase
+    .from('profiles')
+    .upsert({
+      id: user.id,
+      name,
+      intro_text: introText,
+      avatar_url: avatarUrl,
+      updated_at: new Date().toISOString(),
+    })
+
+  if (dbError) {
+    // This will print to your VS Code / command line terminal, NOT the browser console
+    console.error("🔥 SUPABASE DB ERROR 🔥")
+    console.error("Message:", dbError.message)
+    console.error("Details:", dbError.details)
+    console.error("Hint:", dbError.hint)
+    console.error("Code:", dbError.code)
+    
+    // Pass the actual message to the frontend if you want, or just throw it
+    throw new Error(`Database Error: ${dbError.message}`)
+  }
+
+  // 3. Clear cache and redirect
+  revalidatePath('/about')
+  redirect('/about')
 }

@@ -1,8 +1,21 @@
-// src/app/about/page.tsx
-import { FlaskConical, Github, Mail, Linkedin, Code2 } from 'lucide-react'
-import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
+import { FlaskConical } from 'lucide-react'
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const supabase = await createClient()
+  
+  // Since this is a personal blog, we just grab the first profile
+  // Alternatively, you could filter by a specific user ID if there are multiple users
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .limit(1)
+    .single()
+
+  const name = profile?.name || 'Hannah Cho'
+  const introText = profile?.intro_text || 'No bio available yet.'
+  const avatarUrl = profile?.avatar_url
+
   return (
     <div className="space-y-12 animate-in fade-in duration-500">
       
@@ -12,53 +25,39 @@ export default function AboutPage() {
           About the <span className="text-chem-yellow">Chemist</span>
         </h1>
         <p className="text-slate-400 font-mono text-sm">
-          Hannah Cho
+          {name}
         </p>
       </div>
 
       {/* 2. Profile & Bio Grid */}
       <div className="grid md:grid-cols-3 gap-8 items-start">
         
-        {/* Left: Profile Image Placeholder */}
+        {/* Left: Profile Image */}
         <div className="md:col-span-1 space-y-4">
           <div className="aspect-square bg-navy-900 rounded-xl border-2 border-navy-800 flex items-center justify-center relative overflow-hidden group">
-            {/* Placeholder for real image */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-chem-green/20 to-transparent" />
-            <FlaskConical className="w-24 h-24 text-slate-600 group-hover:text-chem-yellow transition-colors duration-300" />
-            <span className="absolute bottom-4 text-xs font-mono text-slate-500">
-              [Insert Profile.jpg]
-            </span>
+            {avatarUrl ? (
+              <img 
+                src={avatarUrl} 
+                alt={name} 
+                className="w-full h-full object-cover absolute inset-0 z-10"
+              />
+            ) : (
+              <>
+                <div className="absolute inset-0 bg-gradient-to-tr from-chem-green/20 to-transparent" />
+                <FlaskConical className="w-24 h-24 text-slate-600 group-hover:text-chem-yellow transition-colors duration-300 z-10" />
+              </>
+            )}
           </div>
-          
-          {/* Social Links */}
-          {/*<div className="flex justify-center gap-4">
-            <Link href="#" className="p-2 bg-navy-900 rounded-lg hover:bg-chem-yellow hover:text-navy-950 transition-colors border border-navy-800">
-              <Github className="w-5 h-5" />
-            </Link>
-            <Link href="#" className="p-2 bg-navy-900 rounded-lg hover:bg-chem-yellow hover:text-navy-950 transition-colors border border-navy-800">
-              <Linkedin className="w-5 h-5" />
-            </Link>
-            <Link href="mailto:student@example.com" className="p-2 bg-navy-900 rounded-lg hover:bg-chem-yellow hover:text-navy-950 transition-colors border border-navy-800">
-              <Mail className="w-5 h-5" />
-            </Link>
-          </div>*/}
         </div>
 
         {/* Right: The Content */}
         <div className="md:col-span-2 space-y-6 text-slate-300 leading-relaxed">
           <div className="prose prose-invert max-w-none">
             <h3 className="text-xl font-orbitron text-white mb-4">About Me</h3>
-            <p>
-              My name is Hannah, and I created <em>Chemtree</em> to better understand chemistry beyond memorizing formulas.</p><br/>
-              
-              <p>When I first started learning chemistry, I could follow individual lessons, but the bigger picture often felt unclear. I wanted to understand how concepts were connected and why reactions worked the way they did. Chemtree began as a way to organize what I was learning and turn questions into clear explanations.</p>
-<br/>
-<p>Through researching topics like everyday chemical reactions and new scientific developments, I’ve learned to think more deeply about how chemistry shapes the world around us. Writing each post helps me strengthen my understanding while making complex ideas more accessible.</p>
-<br/>
-<p>I built this website on my own and learned a lot through trial and error. Fixing mistakes and reworking pages forced me to be patient and think through problems instead of rushing past them.</p>
-<br/>
-<p><em>Chemtree</em> is still growing as I grow. It shows how I learn, how I question things, and how I try to understand science in a deeper and more connected way.</p>
-
+            {/* whitespace-pre-wrap ensures standard line breaks from the textarea are respected */}
+            <div className="whitespace-pre-wrap">
+              {introText}
+            </div>
           </div>
 
           {/* Current Focus Section */}
@@ -66,7 +65,7 @@ export default function AboutPage() {
             <h4 className="text-chem-green font-bold font-orbitron mb-2 text-sm uppercase">
               What I Focus On
             </h4>
-            <p>Through <em>Chemtree</em>, I explore several areas of chemistry:</p>
+            <p className="mb-2">Through <em>Chemtree</em>, I explore several areas of chemistry:</p>
             <ul className="list-disc list-inside space-y-1 text-sm text-slate-300">
               <li>Breaking down core concepts from my coursework</li>
               <li>Explaining chemistry behind everyday phenomena</li>
@@ -77,29 +76,6 @@ export default function AboutPage() {
           </div>
         </div>
       </div>
-
-      {/* 3. The "Meta" Section (Built with...) */}
-      {/*<div className="pt-8 border-t border-navy-800">
-        <h3 className="text-lg font-orbitron text-white mb-6 flex items-center gap-2">
-          <Code2 className="w-5 h-5 text-chem-yellow" />
-          Lab Equipment (Tech Stack)
-        </h3>
-        
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { name: "Next.js", desc: "React Framework" },
-            { name: "Supabase", desc: "Database & Auth" },
-            { name: "Tailwind CSS", desc: "Styling Engine" },
-            { name: "TipTap", desc: "Headless Editor" }
-          ].map((tech) => (
-            <div key={tech.name} className="bg-navy-900 p-4 rounded-lg border border-navy-800">
-              <div className="font-bold text-slate-200">{tech.name}</div>
-              <div className="text-xs text-slate-500 font-mono">{tech.desc}</div>
-            </div>
-          ))}
-        </div>
-      </div>*/}
-
     </div>
   )
 }
