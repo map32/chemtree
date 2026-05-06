@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import sharp from 'sharp'
+import heicConvert from "heic-convert";
 const { heif } = sharp.format;
 console.log(heif.input.buffer);
 
@@ -58,35 +59,34 @@ export async function createPost(formData: FormData) {
 }
 
 // 2. IMAGE UPLOAD (For TipTap)
-const NEEDS_CONVERSION = new Set(["heic", "heif", "tiff", "tif", "avif"]);
+
+const HEIC_FORMATS = new Set(["heic", "heif"]);
+const SHARP_FORMATS = new Set(["tiff", "tif", "avif"]);
 
 export async function uploadImage(formData: FormData) {
   const supabase = await createClient();
   const file = formData.get("file") as File;
 
-  let buffer = Buffer.from(await file.arrayBuffer());
-  let fileExt = file.name.split(".").pop()!.toLowerCase();
+  let buffer = Buffer.from(await file.arrayBuffer() as ArrayBuffer);
+  const fileExt = file.name.split(".").pop()!.toLowerCase();
 
-  if (NEEDS_CONVERSION.has(fileExt)) {
-    buffer = await sharp(buffer).png().toBuffer() as Buffer<ArrayBuffer>;
-    fileExt = "png";
+  if (fileExt === "heic" || fileExt === "heif") {
+    const converted = await heicConvert({ buffer: Uint8Array.from(buffer), format: "PNG" });
+    buffer = Buffer.from(converted) as Buffer<ArrayBuffer>;
   }
 
-  const fileName = `${Math.random()}.${fileExt}`;
-  const filePath = `uploads/${fileName}`;
+  // Convert everything to WebP
+  buffer = await sharp(buffer).webp({ quality: 80 }).toBuffer() as Buffer<ArrayBuffer>;
+
+  const fileName = `uploads/${Math.random()}.webp`;
 
   const { error } = await supabase.storage
     .from("blog-assets")
-    .upload(filePath, buffer, {
-      contentType: `image/${fileExt === "jpg" ? "jpeg" : fileExt}`,
-    });
+    .upload(fileName, buffer, { contentType: "image/webp" });
 
   if (error) throw new Error(error.message);
 
-  const { data } = supabase.storage
-    .from("blog-assets")
-    .getPublicUrl(filePath);
-
+  const { data } = supabase.storage.from("blog-assets").getPublicUrl(fileName);
   return data.publicUrl;
 }
 
@@ -94,6 +94,7 @@ export async function editPost(postId: string, formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
+
   const contentJson = JSON.parse(formData.get('content') as string)
   const title = formData.get('title') as string
   const category = formData.get('category') as string
@@ -101,22 +102,50 @@ export async function editPost(postId: string, formData: FormData) {
   const excerpt = rawText.slice(0, 160).trim() + (rawText.length > 160 ? '...' : '') || 'View details...'
   const slug = title.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-')
 
+  // Fetch old content to diff images
+  const { data: existing } = await supabase
+    .from('posts')
+    .select('content')
+    .eq('id', postId)
+    .single()
+
+  function extractImageUrls(node: any): string[] {
+    if (!node) return []
+    const urls: string[] = []
+    if (node.type === 'image' && node.attrs?.src) urls.push(node.attrs.src)
+    if (Array.isArray(node.content)) urls.push(...node.content.flatMap(extractImageUrls))
+    return urls
+  }
+
+  const oldUrls = extractImageUrls(existing?.content)
+  const newUrls = extractImageUrls(contentJson)
+  const removed = oldUrls.filter(url => !newUrls.includes(url))
+
+  const BUCKET_NAME = 'blog-assets'
+  const pathsToDelete = removed
+    .map(url => {
+      const parts = url.split(`/public/${BUCKET_NAME}/`)
+      return parts.length > 1 ? parts[1] : null
+    })
+    .filter(Boolean) as string[]
+
+  if (pathsToDelete.length > 0) {
+    const { error: storageError } = await supabase.storage.from(BUCKET_NAME).remove(pathsToDelete)
+    if (storageError) console.error('Storage Delete Error:', storageError)
+  }
+
   const { error } = await supabase
     .from('posts')
-    .update({
-      title,
-      slug,
-      excerpt,
-      category,
-      content: contentJson,
-    })
+    .update({ title, slug, excerpt, category, content: contentJson })
     .eq('id', postId)
+
   if (error) {
     console.error('Edit Post Error:', error)
     return { success: false, error: error.message }
   }
+
   revalidatePath(`/posts/${slug}`)
-  return { success: true, slug: slug}
+  return { success: true, slug }
 }
 
 export async function deletePost(postId: string) {
