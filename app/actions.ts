@@ -2,6 +2,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import sharp from 'sharp'
+const { heif } = sharp.format;
+console.log(heif.input.buffer);
 
 // HELPER: Recursively extract text from TipTap JSON
 function generateExcerpt(node: any): string {
@@ -55,24 +58,36 @@ export async function createPost(formData: FormData) {
 }
 
 // 2. IMAGE UPLOAD (For TipTap)
+const NEEDS_CONVERSION = new Set(["heic", "heif", "tiff", "tif", "avif"]);
+
 export async function uploadImage(formData: FormData) {
-  const supabase = await createClient()
-  const file = formData.get('file') as File
-  const fileExt = file.name.split('.').pop()
-  const fileName = `${Math.random()}.${fileExt}`
-  const filePath = `uploads/${fileName}`
+  const supabase = await createClient();
+  const file = formData.get("file") as File;
+
+  let buffer = Buffer.from(await file.arrayBuffer());
+  let fileExt = file.name.split(".").pop()!.toLowerCase();
+
+  if (NEEDS_CONVERSION.has(fileExt)) {
+    buffer = await sharp(buffer).png().toBuffer() as Buffer<ArrayBuffer>;
+    fileExt = "png";
+  }
+
+  const fileName = `${Math.random()}.${fileExt}`;
+  const filePath = `uploads/${fileName}`;
 
   const { error } = await supabase.storage
-    .from('blog-assets')
-    .upload(filePath, file)
+    .from("blog-assets")
+    .upload(filePath, buffer, {
+      contentType: `image/${fileExt === "jpg" ? "jpeg" : fileExt}`,
+    });
 
-  if (error) throw new Error(error.message)
+  if (error) throw new Error(error.message);
 
   const { data } = supabase.storage
-    .from('blog-assets')
-    .getPublicUrl(filePath)
+    .from("blog-assets")
+    .getPublicUrl(filePath);
 
-  return data.publicUrl
+  return data.publicUrl;
 }
 
 export async function editPost(postId: string, formData: FormData) {
@@ -185,10 +200,9 @@ export async function deletePost(postId: string) {
 export async function getCategories() {
   const supabase = await createClient()
   const { data, error } = await supabase
-
     .from('categories')
     .select('id, name')
-  if (error) throw new Error(error.message)
+  if (error) {console.log(error); throw new Error(error.message)}
   return data ?? []
 }
 
@@ -275,7 +289,7 @@ export async function updateProfile(formData: FormData) {
       .from('blog-assets')
       .upload(fileName, avatarFile, { upsert: true })
 
-    if (uploadError) throw new Error('Failed to upload image')
+    if (uploadError) {console.log(uploadError); throw new Error('Failed to upload image')}
 
     const { data: publicUrlData } = supabase.storage
       .from('blog-assets')
