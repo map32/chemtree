@@ -71,7 +71,10 @@ export async function uploadImage(formData: FormData) {
   const fileExt = file.name.split(".").pop()!.toLowerCase();
 
   if (fileExt === "heic" || fileExt === "heif") {
-    const converted = await heicConvert({ buffer: Uint8Array.from(buffer), format: "PNG" });
+    const converted = await heicConvert({
+      buffer: Uint8Array.from(buffer).buffer,
+      format: "PNG",
+    });
     buffer = Buffer.from(converted) as Buffer<ArrayBuffer>;
   }
 
