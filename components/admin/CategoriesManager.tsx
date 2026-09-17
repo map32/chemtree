@@ -53,15 +53,15 @@ export default function CategoriesManager({ initial }: { initial: Category[] }) 
       <div className="bg-navy-900 p-4 rounded border border-navy-800">
         <h2 className="text-xl font-orbitron text-white mb-3">Edit Categories</h2>
 
-        <form onSubmit={handleAdd} className="flex gap-2 mb-4">
+        <form onSubmit={handleAdd} className="flex w-full gap-2 mb-4">
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="New category name"
-            className="flex-1 bg-navy-800 border border-navy-700 px-3 py-2 rounded text-white"
+            className="flex-1 bg-navy-800 border border-navy-700 w-0 px-3 py-2 rounded text-white"
           />
           <button
-            className="bg-chem-yellow text-navy-950 px-4 py-2 rounded disabled:opacity-50"
+            className="bg-chem-yellow text-navy-950 px-4 flex-0 py-2 rounded disabled:opacity-50"
             disabled={adding}
           >
             {adding ? 'Adding...' : 'Add'}

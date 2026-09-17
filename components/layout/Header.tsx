@@ -6,7 +6,7 @@ import { Suspense } from 'react';
 export function Header() {
   return (
     <header className="w-full bg-navy-900 border-b-4 border-chem-yellow py-12">
-      <div className="container mx-auto px-4 flex items-center gap-6">
+      <div className="container mx-auto px-4 flex flex-col md:flex-row items-center gap-6">
         {/* Placeholder Logo */}
         <div className="w-24 h-24 bg-chem-green rounded-3xl flex items-center justify-center border-4 border-navy-800 shadow-xl p-2">
            <div className='w-full h-full relative'>
