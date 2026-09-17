@@ -70,7 +70,7 @@ function isHeic(buf: Buffer) {
   return brands.some((b) => HEVC_BRANDS.has(b));
 }
 
-const MAX_BYTES = 4.5 * 1024 * 1024;
+const MAX_BYTES = 20 * 1024 * 1024;
 
 export type UploadResult =
   | { ok: true; url: string }
@@ -87,7 +87,7 @@ export async function uploadImage(formData: FormData): Promise<UploadResult> {
 
     const file = formData.get("file");
     if (!(file instanceof File) || file.size === 0) throw new UploadError("No file provided.");
-    if (file.size > MAX_BYTES) throw new UploadError("Image is too large (max 4.5 MB).");
+    if (file.size > MAX_BYTES) throw new UploadError("Image is too large (max 20 MB).");
 
    let input = Buffer.from(await file.arrayBuffer());
 
