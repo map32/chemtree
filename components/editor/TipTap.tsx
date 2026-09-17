@@ -151,9 +151,9 @@ export default function TipTap({ content, onChange, ref }: EditorProps) {
   const currentHighlightColor = editor.getAttributes('highlight').color || '#000000'
 
   return (
-    <div className="w-full border border-navy-800 rounded-lg bg-navy-900 overflow-hidden">
+    <div className="w-full border border-navy-800 rounded-lg bg-navy-900 overflow-hidden relative">
       {uploadError && <p className='font-bold text-red-600'>{uploadError}</p>}
-      {uploading && <div className='opacity-50 bg-black absolute z-10 w-full h-full flex justify-center items-center'><div className='size-32 border-2 border-white border-t-ransparent rounded-full animate-spin' /></div>}
+      {uploading && <div className='opacity-50 bg-black absolute z-10 w-full h-full flex justify-center items-center'><div className='size-28 border-4 border-white border-t-transparent rounded-full animate-spin' /></div>}
       {/* Toolbar */}
       <div className="flex flex-wrap gap-2 p-3 bg-navy-950 border-b border-navy-800 items-center">
         
