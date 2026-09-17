@@ -4,8 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import sharp from 'sharp'
 import heicConvert from "heic-convert";
-const { heif } = sharp.format;
-console.log(heif.input.buffer);
+import { randomUUID } from 'crypto'
 
 // HELPER: Recursively extract text from TipTap JSON
 function generateExcerpt(node: any): string {
@@ -60,37 +59,74 @@ export async function createPost(formData: FormData) {
 
 // 2. IMAGE UPLOAD (For TipTap)
 
-const HEIC_FORMATS = new Set(["heic", "heif"]);
-const SHARP_FORMATS = new Set(["tiff", "tif", "avif"]);
+const HEVC_BRANDS = new Set(["heic", "heix", "heim", "heis", "hevc", "hevx"]);
 
-export async function uploadImage(formData: FormData) {
-  const supabase = await createClient();
-  const file = formData.get("file") as File;
+function isHeic(buf: Buffer) {
+  if (buf.length < 16 || buf.toString("ascii", 4, 8) !== "ftyp") return false;
+  const boxSize = Math.min(buf.readUInt32BE(0), buf.length);
+  const brands = [buf.toString("ascii", 8, 12)];
+  for (let i = 16; i + 4 <= boxSize; i += 4) brands.push(buf.toString("ascii", i, i + 4));
+  if (brands.includes("avif") || brands.includes("avis")) return false; // sharp handles AVIF
+  return brands.some((b) => HEVC_BRANDS.has(b));
+}
 
-  let buffer = Buffer.from(await file.arrayBuffer() as ArrayBuffer);
-  const fileExt = file.name.split(".").pop()!.toLowerCase();
+const MAX_BYTES = 4.5 * 1024 * 1024;
 
-  if (fileExt === "heic" || fileExt === "heif") {
-    const converted = await heicConvert({
-      buffer: Uint8Array.from(buffer).buffer,
-      format: "PNG",
-    });
-    buffer = Buffer.from(converted) as Buffer<ArrayBuffer>;
+export type UploadResult =
+  | { ok: true; url: string }
+  | { ok: false; error: string };
+
+// Errors whose message is safe to show the user
+class UploadError extends Error {}
+
+export async function uploadImage(formData: FormData): Promise<UploadResult> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { ok: false, error: "You must be signed in to upload images." };
+
+    const file = formData.get("file");
+    if (!(file instanceof File) || file.size === 0) throw new UploadError("No file provided.");
+    if (file.size > MAX_BYTES) throw new UploadError("Image is too large (max 4.5 MB).");
+
+   let input = Buffer.from(await file.arrayBuffer());
+
+    if (isHeic(input)) {
+      const converted = await heicConvert({
+        buffer: new Uint8Array(input).buffer,
+        format: "JPEG",
+        quality: 0.92,
+      });
+      input = Buffer.from(converted);
+    }
+
+    let output: Buffer;
+    try {
+      output = await sharp(input, { animated: true })
+        .rotate() // apply EXIF orientation before metadata is stripped
+        .resize({ width: 2000, withoutEnlargement: true })
+        .webp({ quality: 80 })
+        .toBuffer();
+    } catch {
+      throw new Error("Unsupported or corrupted image format");
+    }
+
+    const fileName = `uploads/${randomUUID()}.webp`;
+    const { error } = await supabase.storage
+      .from("blog-assets")
+      .upload(fileName, output, { contentType: "image/webp" });
+    if (error) {
+      console.error("Supabase upload failed:", error);
+      throw new UploadError("Could not save the image. Please try again.");
+    }
+
+    const url = supabase.storage.from("blog-assets").getPublicUrl(fileName).data.publicUrl;
+    return { ok: true, url };
+  } catch (err) {
+    if (err instanceof UploadError) return { ok: false, error: err.message };
+    console.error("uploadImage failed:", err);
+    return { ok: false, error: "Upload failed. Please try again." };
   }
-
-  // Convert everything to WebP
-  buffer = await sharp(buffer).webp({ quality: 80 }).toBuffer() as Buffer<ArrayBuffer>;
-
-  const fileName = `uploads/${Math.random()}.webp`;
-
-  const { error } = await supabase.storage
-    .from("blog-assets")
-    .upload(fileName, buffer, { contentType: "image/webp" });
-
-  if (error) throw new Error(error.message);
-
-  const { data } = supabase.storage.from("blog-assets").getPublicUrl(fileName);
-  return data.publicUrl;
 }
 
 export async function editPost(postId: string, formData: FormData) {

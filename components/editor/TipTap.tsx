@@ -7,10 +7,24 @@ import TipTapImage from '@tiptap/extension-image'
 import Highlight from '@tiptap/extension-highlight'
 import OfficePaste from "@intevation/tiptap-extension-office-paste"
 import { uploadImage } from '@/app/actions'
-import { useImperativeHandle } from 'react'
+import { useCallback, useImperativeHandle, useState } from 'react'
 import { Undo, Redo, Baseline, Highlighter } from 'lucide-react'
 
 // --- MAIN COMPONENT ---
+
+const MAX_BYTES = 20 * 1024 * 1024;
+const ACCEPT = "image/*,.heic,.heif";
+const IMAGE_EXT = /\.(jpe?g|png|gif|webp|avif|tiff?|heic|heif|svg)$/i;
+
+function validateFile(file: File): string | null {
+  // file.type is often "" for HEIC (e.g. Chrome on Windows), so fall back to the extension
+  if (!file.type.startsWith("image/") && !IMAGE_EXT.test(file.name)) {
+    return "Please choose an image file.";
+  }
+  if (file.size === 0) return "That file is empty.";
+  if (file.size > MAX_BYTES) return "Image is too large (max 20 MB).";
+  return null;
+}
 
 interface EditorProps {
   content: any
@@ -19,6 +33,10 @@ interface EditorProps {
 }
 
 export default function TipTap({ content, onChange, ref }: EditorProps) {
+
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -63,27 +81,54 @@ export default function TipTap({ content, onChange, ref }: EditorProps) {
   })
 
   useImperativeHandle(ref, () => ({
-    setContent: (json: any) => editor?.commands.setContent(json)
+    setContent: (json: any) => editor?.commands.setContent(json),
+    uploading,
+    uploadError
   }), [editor])
 
-  const addImage = async () => {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = 'image/*'
-    input.onchange = async () => {
-      if (input.files?.length) {
-        const file = input.files[0]
-        const formData = new FormData()
-        formData.append('file', file)
-        
-        const url = await uploadImage(formData) 
-        if (url) {
-          editor?.chain().focus().setImage({ src: url }).run()
-        }
-      }
+  const addImage = useCallback(() => {
+  if (!editor || editor.isDestroyed || uploading) return;
+  const ed = editor; // keep the narrowed, non-null type inside the async callback
+
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ACCEPT;
+
+  input.onchange = async () => {
+    const file = input.files?.[0];
+    if (!file) return; // user cancelled
+
+    const problem = validateFile(file);
+    if (problem) {
+      setUploadError(problem);
+      return;
     }
-    input.click()
-  }
+
+    setUploading(true);
+    setUploadError(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const result = await uploadImage(formData);
+      if (!result.ok) {
+        setUploadError(result.error);
+        return;
+      }
+      if (ed.isDestroyed) return; // user navigated away mid-upload
+
+      ed.chain().focus().setImage({ src: result.url }).run();
+    } catch (err) {
+      // Network failure, or the request exceeded the body size limit
+      console.error(err);
+      setUploadError("Upload failed. Check your connection and try again.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  input.click();
+}, [editor, uploading]);
 
   const setLink = () => {
     const previousUrl = editor?.getAttributes('link').href
